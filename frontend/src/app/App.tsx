@@ -1,13 +1,10 @@
+import React from "react";
+import { RouterProvider } from "react-router-dom";
+
+import { router } from "./router";
+
 function App() {
-  return (
-    <main style={{ fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif", margin: "2rem auto", maxWidth: "720px" }}>
-      <h1>Frontend foundation ready</h1>
-      <p>
-        Vite + React + TypeScript scaffold with strict settings and path aliases. Add guardrails
-        (lint/typecheck/tests) next.
-      </p>
-    </main>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

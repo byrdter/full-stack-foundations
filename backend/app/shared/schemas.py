@@ -86,3 +86,15 @@ class ErrorResponse(BaseModel):
     error: str
     type: str
     detail: str | None = None
+
+
+class EchoRequest(BaseModel):
+    """Request payload for the echo endpoint."""
+
+    message: str = Field(..., min_length=1, description="Message to echo back")
+
+
+class EchoResponse(BaseModel):
+    """Response payload for the echo endpoint."""
+
+    message: str

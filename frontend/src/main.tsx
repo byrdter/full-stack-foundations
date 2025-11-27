@@ -2,6 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import App from "@/app/App";
+import { QueryProvider } from "@/app/providers/QueryProvider";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+import { ToastProvider } from "@/shared/components/Toast";
+import { ErrorFallback } from "@/shared/components/ErrorFallback";
 
 const rootElement = document.getElementById("root");
 
@@ -11,6 +15,12 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary fallback={<ErrorFallback onRetry={() => window.location.reload()} />}>
+      <ToastProvider>
+        <QueryProvider>
+          <App />
+        </QueryProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 );

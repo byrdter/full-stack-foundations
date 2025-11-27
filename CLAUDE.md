@@ -4,7 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FastAPI + PostgreSQL application using **vertical slice architecture**, optimized for AI-assisted development. Python 3.12+, strict type checking with MyPy and Pyright.
+FastAPI + PostgreSQL application using **vertical slice architecture**, optimized for AI-assisted development. Python 3.12+, strict type checking with MyPy and Pyright. Backend code now lives in `backend/` with FastAPI; frontend lives in `frontend/` (React + Vite). Run backend commands from inside `backend/`.
+
+**This repository is a foundation for agentic AI applications** with 5 core guardrails:
+1. **Tests** (pytest, vitest, playwright) - Including security tests
+2. **Linting & Style** (Ruff, ESLint, Prettier) - Including security rules
+3. **Type Checks** (MyPy, Pyright, TypeScript strict) - Type-safe security
+4. **Logging** (structlog) - Including security events
+5. **Architecture** (Vertical Slices) - Security through isolation
+
+See `explanations/` folder for comprehensive documentation on each guardrail.
 
 ## Core Principles
 
@@ -19,9 +28,9 @@ FastAPI + PostgreSQL application using **vertical slice architecture**, optimize
 **Vertical Slice Architecture**
 
 - Each feature owns its database models, schemas, routes, and business logic
-- Features live in separate directories under `app/` (e.g., `app/products/`, `app/orders/`)
-- Shared utilities go in `app/shared/` only when used by 3+ features
-- Core infrastructure (`app/core/`) is shared across all features
+- Features live in separate directories under `backend/app/` (e.g., `backend/app/products/`, `backend/app/orders/`)
+- Shared utilities go in `backend/app/shared/` only when used by 3+ features
+- Core infrastructure (`backend/app/core/`) is shared across all features
 
 **Type Safety (CRITICAL)**
 
@@ -38,11 +47,13 @@ FastAPI + PostgreSQL application using **vertical slice architecture**, optimize
 - Structured logging: Use `domain.component.action_state` pattern (hybrid dotted namespace)
   - Format: `{domain}.{component}.{action}_{state}`
   - Examples: `user.registration_started`, `product.create_completed`, `agent.tool.execution_failed`
-  - See `docs/logging-standard.md` for complete event taxonomy
+  - See `backend/docs/logging-standard.md` for complete event taxonomy
 - Request correlation: All logs include `request_id` automatically via context vars
 - Consistent verbose naming: Predictable patterns for AI code generation
 
 ## Essential Commands
+
+Run backend commands from inside `backend/`.
 
 ### Development
 
@@ -118,11 +129,31 @@ docker-compose down
 ### Directory Structure
 
 ```
-app/
-├── core/           # Infrastructure (config, database, logging, middleware, health, exceptions)
-├── shared/         # Cross-feature utilities (pagination, timestamps, error schemas)
-├── main.py         # FastAPI application entry point
-└── features/       # Feature directories (e.g., products/, orders/)
+backend/
+├── app/
+│   ├── core/           # Infrastructure (config, database, logging, middleware, health, exceptions)
+│   ├── shared/         # Cross-feature utilities (pagination, timestamps, error schemas, SECURITY)
+│   │   └── security.py # Security utilities (passwords, sanitization, rate limiting, PII)
+│   ├── examples/       # Example features demonstrating all patterns
+│   │   └── complete_feature/  # Complete example: notes feature with all guardrails
+│   ├── tests/          # Backend unit/integration tests
+│   └── main.py         # FastAPI application entry point
+├── alembic/            # Migrations
+├── docs/               # Standards for logging, typing, linting, testing
+├── Dockerfile          # Backend image
+└── docker-compose.yml  # Backend + Postgres services
+
+explanations/           # Comprehensive guardrail documentation
+├── README.md           # Reading guide
+├── overview.md         # PIV loop and philosophy
+├── tests.md            # Testing + security testing
+├── linting-and-style.md  # Linting + security rules
+├── type-checks.md      # Type checking + type safety for security
+├── logging.md          # Structured logging + security events
+└── architecture.md     # Vertical slices + security through isolation
+
+frontend/
+└── ...                 # React + Vite app and guardrails
 ```
 
 ### Database
@@ -152,7 +183,7 @@ app/
 - Logger: `from app.core.logging import get_logger; logger = get_logger(__name__)`
 - Event naming: Hybrid dotted namespace pattern `domain.component.action_state`
   - Examples: `user.registration_completed`, `database.connection_initialized`, `request.http_received`
-  - Detailed taxonomy: See `docs/logging-standard.md`
+  - Detailed taxonomy: See `backend/docs/logging-standard.md`
 - Exception logging: Always include `exc_info=True` for stack traces
 
 **Event Pattern Guidelines:**
@@ -221,6 +252,16 @@ Agent tool docstrings guide **when to use the tool and how** for LLM reasoning.
 - `ErrorResponse`: Standard error response format
 - Global exception handlers configured in `app.main`
 
+**Security** (`app.shared.security`)
+
+- `hash_password()`, `verify_password()` - Bcrypt password hashing
+- `sanitize_html()` - XSS prevention (removes dangerous HTML)
+- `sanitize_sql_identifier()` - SQL injection prevention
+- `RateLimiter` - Brute force prevention
+- `contains_pii()`, `redact_pii()` - PII detection and redaction
+- `generate_secure_token()` - Cryptographically secure tokens
+- Type-safe security primitives: `PlainPassword`, `HashedPassword`, `SanitizedHTML`, etc.
+
 ### Configuration
 
 - Environment variables via Pydantic Settings (`app.core.config`)
@@ -228,16 +269,71 @@ Agent tool docstrings guide **when to use the tool and how** for LLM reasoning.
 - Copy `.env.example` to `.env` for local development
 - Settings singleton: `get_settings()` from `app.core.config`
 
+## Security Patterns
+
+Security is integrated throughout all 5 guardrails:
+
+**1. Security Testing** (`@pytest.mark.security`)
+- SQL injection prevention tests
+- XSS prevention tests
+- Authentication/authorization tests
+- Rate limiting tests
+- Sensitive data exposure tests
+
+**2. Security Linting** (Ruff S-prefix rules)
+- S105: Hardcoded password detection
+- S608: SQL injection via string formatting
+- S324: Insecure hash functions (MD5, SHA1)
+- S501: SSL verification disabled
+- S602/S605: Shell injection
+
+**3. Type Safety for Security** (NewType wrappers)
+```python
+from app.shared.security import PlainPassword, HashedPassword, SanitizedHTML
+
+def hash_password(plain: PlainPassword) -> HashedPassword:
+    # Type system enforces that passwords are handled securely
+    pass
+```
+
+**4. Security Event Logging**
+- `authentication.*` - Login, token, logout events
+- `authorization.*` - Access granted/denied
+- `security.*` - Rate limits, brute force, injection attempts
+- `audit.*` - Data access, modifications, exports
+
+**5. Security Through Isolation** (Vertical Slices)
+- Each feature folder is isolated (limited blast radius)
+- Sensitive features (auth/, payments/) have controlled exports
+- Feature-level permission boundaries
+- Authorization checks in service layer
+
+See `explanations/` for comprehensive security documentation.
+
 ## Development Guidelines
 
 **When Creating New Features**
 
-1. Create feature directory under `app/` (e.g., `app/products/`)
-2. Structure: `models.py`, `schemas.py`, `routes.py`, `service.py`, `tests/`
-3. Models inherit from `Base` and `TimestampMixin`
-4. Use `get_db()` dependency for database sessions
-5. Follow structured logging pattern: `feature.action_state` (e.g., `product.create_started`, `product.create_completed`)
-6. Add router to `app/main.py`: `app.include_router(feature_router)`
+**IMPORTANT**: Study `backend/app/examples/complete_feature/` first! This is a complete example feature (notes) demonstrating all patterns:
+- Vertical slice structure
+- Complete logging lifecycle (started, completed, failed)
+- Type safety with full annotations
+- Security (auth, authorization, input validation)
+- Comprehensive tests (unit + security)
+
+To create a new feature:
+
+1. Study the example: `backend/app/examples/complete_feature/` and read its `README.md`
+2. Create feature directory under `backend/app/` (e.g., `backend/app/products/`)
+3. Structure: `models.py`, `schemas.py`, `routes.py`, `service.py`, `tests/`
+4. Models inherit from `Base` and `TimestampMixin`
+5. Use `get_db()` dependency for database sessions
+6. Follow complete logging lifecycle:
+   - START: `logger.info("feature.action_started", **context)`
+   - SUCCESS: `logger.info("feature.action_completed", **context, duration_ms=X)`
+   - FAILURE: `logger.error("feature.action_failed", exc_info=True, error=str(e), **context)`
+7. Add security tests with `@pytest.mark.security`
+8. Add router to `app/main.py`: `app.include_router(feature_router)`
 
 **Type Checking**
 
@@ -250,7 +346,7 @@ Agent tool docstrings guide **when to use the tool and how** for LLM reasoning.
 - Write tests alongside feature code in `tests/` subdirectory
 - Use `@pytest.mark.integration` for tests requiring real database
 - Fast unit tests preferred (<1s total execution time)
-- Test fixtures in `app/tests/conftest.py`
+- Test fixtures in `app/tests/conftest.py` (under `backend/`)
 
 **Logging Best Practices**
 
