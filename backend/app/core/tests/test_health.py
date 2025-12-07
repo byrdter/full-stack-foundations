@@ -113,7 +113,7 @@ async def test_database_health_check_logs_error():
 
         # Verify logger was called with exc_info=True
         mock_logger.assert_called_once()
-        assert "database.health_check_failed" in str(mock_logger.call_args)
+        assert "health.db_check_failed" in str(mock_logger.call_args)
 
 
 @pytest.mark.asyncio
