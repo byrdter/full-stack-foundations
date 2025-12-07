@@ -1,1 +1,1 @@
-"""Obsidian Agent Project application package."""
+"""AI Foundation for Agentic AI Workflows application package."""
