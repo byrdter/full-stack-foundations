@@ -24,8 +24,11 @@ Learn more:
     See explanations/architecture.md for vertical slice architecture details
     See explanations/logging.md for logging patterns
     See explanations/tests.md for testing patterns
+
+Note:
+    Router is NOT exported from __init__.py to avoid SQLAlchemy model
+    double-import issues during test collection. Import directly from routes.py.
 """
 
-from .routes import router
-
-__all__ = ["router"]
+# Don't export router here - it causes SQLAlchemy model conflicts during pytest collection
+# Import directly: from app.examples.complete_feature.routes import router

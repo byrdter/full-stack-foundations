@@ -67,6 +67,7 @@ ignore = [
 "__init__.py" = ["F401"]  # Allow unused imports in package init
 "scripts/**/*.py" = ["T201"]  # Allow print in scripts
 "app/core/health.py" = ["B008"]  # FastAPI Depends() in defaults is the recommended pattern
+"app/**/routes.py" = ["B008"]  # FastAPI Depends() in defaults is the recommended pattern
 
 [tool.ruff.format]
 quote-style = "double"
@@ -102,6 +103,7 @@ asyncio_mode = "auto"  # Creates new event loop per test (proper isolation)
 testpaths = ["app", "tests"]
 markers = [
     "integration: marks tests requiring real database (deselect with '-m \"not integration\"')",
+    "security: marks security-related tests (XSS, injection, etc.)",
 ]
 
 [tool.pyright]
