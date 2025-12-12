@@ -62,14 +62,31 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
             duration = time.time() - start_time
+            status_code: int = response.status_code  # pyright: ignore[reportUnknownMemberType]
 
-            logger.info(
-                "request.http_completed",
-                method=request.method,
-                path=request.url.path,
-                status_code=response.status_code,  # pyright: ignore[reportUnknownMemberType]
-                duration_seconds=round(duration, 3),
+            # Log context for all levels
+            log_context = {
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": status_code,
+                "duration_seconds": round(duration, 3),
+            }
+
+            # Debug: verbose request details
+            logger.debug(
+                "request.http_details",
+                **log_context,
+                query_params=str(request.query_params),
+                user_agent=request.headers.get("user-agent"),
             )
+
+            # Status-code-aware logging
+            if status_code >= 500:
+                logger.error("request.http_completed", **log_context)
+            elif status_code >= 400:
+                logger.warning("request.http_completed", **log_context)
+            else:
+                logger.info("request.http_completed", **log_context)
 
             # Add request ID to response headers
             response.headers["X-Request-ID"] = get_request_id()  # pyright: ignore[reportUnknownMemberType]
