@@ -1,11 +1,23 @@
 # Auth Layer Implementation Status (Level 0.5)
 
+## Quick Status
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| **Phase 1** | COMPLETE | Backend auth (JWT, RBAC, 9 endpoints, 4 tables) |
+| **Phase 2** | NOT STARTED | Email verification flow (requires email service) |
+| **Phase 3** | NOT STARTED | Frontend auth (React components) |
+
+**Current State:** Phase 1 complete - backend auth is fully functional. Users can register, login, logout, refresh tokens, verify email (manually), and reset passwords. Frontend integration pending.
+
+---
+
 ## Overview
 
 This document tracks the implementation of the authentication layer ("Level 0.5") for the full-stack-foundations repository. This layer adds user identity, registration, login, sessions, and role-based access control - foundational infrastructure needed before adding AI agent capabilities (Level 1).
 
 **Created:** 2026-01-03
-**Last Updated:** 2026-01-03 (Phase 1 Complete)
+**Last Updated:** 2026-01-03
 
 ---
 
@@ -212,3 +224,7 @@ backend/alembic/versions/
   - All tests passing (123 tests)
   - All type checks passing (mypy, pyright)
   - All linting passing (ruff)
+- **Documentation updated:**
+  - Updated `README.md` with auth API section and directory structure
+  - Updated `CLAUDE.md` with auth configuration and usage examples
+  - Added Quick Status table to `TASK.md`

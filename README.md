@@ -2,6 +2,8 @@
 
 A **production-ready foundation** for building autonomous AI applications with FastAPI + PostgreSQL backend and React + TypeScript frontend. Designed with **5 core guardrails** that enable AI agents to plan, implement, validate, and self-correct code autonomously.
 
+> **Latest Update (2026-01-03):** Added complete authentication layer (Level 0.5) with JWT + refresh tokens, RBAC, email verification, and password reset. See [TASK.md](TASK.md) for implementation details.
+
 ## 🎯 What Makes This Different?
 
 This isn't just a starter template - it's a **foundation for agentic AI development** with:
@@ -38,6 +40,14 @@ full-stack-foundations/
 │   │   ├── core/         # Infrastructure (config, database, logging, health)
 │   │   ├── shared/       # Utilities (security, pagination, timestamps)
 │   │   │   └── security.py    # Security utilities (passwords, sanitization, rate limiting)
+│   │   ├── auth/         # 🔐 Authentication layer (Level 0.5)
+│   │   │   ├── models.py      # User, RefreshToken, verification tokens
+│   │   │   ├── schemas.py     # Request/response schemas
+│   │   │   ├── jwt.py         # JWT token utilities
+│   │   │   ├── service.py     # Auth business logic
+│   │   │   ├── routes.py      # API endpoints
+│   │   │   ├── dependencies.py # get_current_user, require_role
+│   │   │   └── tests/         # Auth tests
 │   │   ├── examples/     # Example features
 │   │   │   └── complete_feature/  # Complete notes feature demonstrating all patterns
 │   │   ├── tests/        # Integration tests
@@ -61,6 +71,7 @@ full-stack-foundations/
 │   ├── logging.md        # Structured logging + security events
 │   └── architecture.md   # Vertical slices + security through isolation
 ├── CLAUDE.md             # Guidelines for AI agents (Claude Code, etc.)
+├── TASK.md               # 📋 Implementation tracking (auth layer status)
 └── README.md             # This file
 ```
 
@@ -192,6 +203,52 @@ def hash_password(plain: PlainPassword) -> HashedPassword:
 - Vertical slices limit blast radius
 - Feature-level permissions
 - Sensitive features (auth/, payments/) have controlled exports
+
+## 🔐 Authentication API (Level 0.5)
+
+A complete JWT-based authentication system with refresh token rotation:
+
+### Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/register` | POST | Create new user account |
+| `/auth/login` | POST | Login with email/password (OAuth2 flow) |
+| `/auth/logout` | POST | Revoke refresh token (requires auth) |
+| `/auth/refresh` | POST | Get new access/refresh tokens |
+| `/auth/me` | GET | Get current user profile (requires auth) |
+| `/auth/verify-email` | POST | Verify email with token |
+| `/auth/resend-verification` | POST | Resend verification email |
+| `/auth/forgot-password` | POST | Request password reset |
+| `/auth/reset-password` | POST | Reset password with token |
+
+### Features
+
+- **JWT with Refresh Tokens**: Stateless access tokens (15 min) + stored refresh tokens (7 days) with rotation
+- **RBAC**: Three roles - `user`, `admin`, `superadmin`
+- **Rate Limiting**: Login (10/5min), verification (3/5min), password reset (3/5min)
+- **Email Verification**: 24-hour single-use tokens
+- **Password Reset**: 1-hour single-use tokens
+- **Security**: Bcrypt hashing, SHA256 token storage, prevents email enumeration
+
+### Usage
+
+```python
+from app.auth.dependencies import get_current_user, require_role
+from app.auth.models import User, UserRole
+
+# Require authenticated user
+@router.get("/protected")
+async def protected_route(user: Annotated[User, Depends(get_current_user)]):
+    return {"user_id": user.id}
+
+# Require admin role
+@router.get("/admin-only")
+async def admin_route(user: Annotated[User, Depends(require_role([UserRole.admin]))]):
+    return {"message": "Admin access granted"}
+```
+
+See [TASK.md](TASK.md) for implementation details and future phases.
 
 ## 🏗️ Creating New Features
 

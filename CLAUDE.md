@@ -134,6 +134,14 @@ backend/
 │   ├── core/           # Infrastructure (config, database, logging, middleware, health, exceptions)
 │   ├── shared/         # Cross-feature utilities (pagination, timestamps, error schemas, SECURITY)
 │   │   └── security.py # Security utilities (passwords, sanitization, rate limiting, PII)
+│   ├── auth/           # 🔐 Authentication layer (Level 0.5)
+│   │   ├── models.py       # User, RefreshToken, EmailVerificationToken, PasswordResetToken
+│   │   ├── schemas.py      # Request/response Pydantic models
+│   │   ├── jwt.py          # JWT token creation/validation
+│   │   ├── service.py      # Auth business logic (register, login, tokens, etc.)
+│   │   ├── routes.py       # FastAPI endpoints (/auth/*)
+│   │   ├── dependencies.py # get_current_user, require_role, etc.
+│   │   └── tests/          # Auth tests (JWT, schemas)
 │   ├── examples/       # Example features demonstrating all patterns
 │   │   └── complete_feature/  # Complete example: notes feature with all guardrails
 │   ├── tests/          # Backend unit/integration tests
@@ -268,6 +276,53 @@ Agent tool docstrings guide **when to use the tool and how** for LLM reasoning.
 - Required: `DATABASE_URL` (postgresql+asyncpg://...)
 - Copy `.env.example` to `.env` for local development
 - Settings singleton: `get_settings()` from `app.core.config`
+
+**JWT/Auth Configuration:**
+- `JWT_SECRET_KEY` - Required for production (generate with `openssl rand -hex 32`)
+- `JWT_ALGORITHM` - Default: HS256
+- `ACCESS_TOKEN_EXPIRE_MINUTES` - Default: 15
+- `REFRESH_TOKEN_EXPIRE_DAYS` - Default: 7
+
+### Authentication (`app.auth`)
+
+**Protecting Routes:**
+
+```python
+from typing import Annotated
+from fastapi import Depends
+from app.auth.dependencies import get_current_user, require_role
+from app.auth.models import User, UserRole
+
+# Require any authenticated user
+@router.get("/protected")
+async def protected(user: Annotated[User, Depends(get_current_user)]):
+    return {"user_id": user.id, "email": user.email}
+
+# Require specific role(s)
+@router.get("/admin")
+async def admin_only(user: Annotated[User, Depends(require_role([UserRole.admin, UserRole.superadmin]))]):
+    return {"message": "Admin access"}
+
+# Optional authentication (user may be None)
+from app.auth.dependencies import get_current_user_optional
+
+@router.get("/public")
+async def public(user: Annotated[User | None, Depends(get_current_user_optional)]):
+    if user:
+        return {"message": f"Hello {user.email}"}
+    return {"message": "Hello anonymous"}
+```
+
+**Auth Endpoints (already registered):**
+- `POST /auth/register` - Create user
+- `POST /auth/login` - Get tokens (OAuth2 password flow)
+- `POST /auth/logout` - Revoke refresh token
+- `POST /auth/refresh` - Rotate tokens
+- `GET /auth/me` - Current user profile
+- `POST /auth/verify-email` - Verify email
+- `POST /auth/resend-verification` - Resend verification
+- `POST /auth/forgot-password` - Request reset
+- `POST /auth/reset-password` - Reset password
 
 ## Security Patterns
 
