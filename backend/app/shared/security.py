@@ -113,7 +113,7 @@ def verify_password(
         - Plain password is NEVER logged
         - Failed attempts should be rate limited by caller
     """
-    is_valid = pwd_context.verify(str(plain_password), str(hashed_password))
+    is_valid: bool = pwd_context.verify(str(plain_password), str(hashed_password))
 
     if is_valid:
         logger.info("security.password_verified", result="valid")

@@ -41,6 +41,19 @@ class Settings(BaseSettings):
     # CORS settings
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8123"]
 
+    # JWT settings
+    jwt_secret_key: str = ""  # Required in production, set via JWT_SECRET_KEY env var
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
+
+    # OAuth settings (optional - only needed if OAuth enabled)
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    github_client_id: str | None = None
+    github_client_secret: str | None = None
+    oauth_redirect_base_url: str = "http://localhost:8123"
+
 
 @lru_cache
 def get_settings() -> Settings:

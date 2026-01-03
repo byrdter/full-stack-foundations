@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
+from app.auth.routes import router as auth_router
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import setup_exception_handlers
@@ -75,6 +76,7 @@ setup_exception_handlers(app)
 
 # Include routers
 app.include_router(health_router)
+app.include_router(auth_router)
 
 
 @app.get("/")
