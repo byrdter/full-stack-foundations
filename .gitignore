@@ -39,3 +39,7 @@ Thumbs.db
 .agents/external-docs
 guide.md
 .agents/reports
+
+# Local lesson materials (not part of repo)
+Lesson/
+PresentLessons/
